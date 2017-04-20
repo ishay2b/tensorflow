@@ -58,7 +58,7 @@ public class LabelImage {
 
     byte[] graphDef = readAllBytesOrExit(Paths.get(modelDir, "tensorflow_inception_graph.pb"));
     List<String> labels =
-        readAllLinesOrExit(Paths.get(modelDir, "imagenet_comp_graph_label_strings.txt"));
+        readAllLinesOrExit(Paths.get(modelDir, "labels_strings.txt"));
     byte[] imageBytes = readAllBytesOrExit(Paths.get(imageFile));
 
     try (Tensor image = constructAndExecuteGraphToNormalizeImage(imageBytes)) {

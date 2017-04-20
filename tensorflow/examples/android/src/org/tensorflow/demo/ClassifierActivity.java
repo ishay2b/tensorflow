@@ -58,19 +58,22 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   // --input_node_names="Mul" \
   // --output_node_names="final_result" \
   // --input_binary=true
-  private static final int INPUT_SIZE = 224;
-  private static final int IMAGE_MEAN = 117;
-  private static final float IMAGE_STD = 1;
-  private static final String INPUT_NAME = "input";
-  private static final String OUTPUT_NAME = "output";
+  private static final int INPUT_SIZE = 32; //50;
+  private static final int IMAGE_MEAN = 128;
+  private static final float IMAGE_STD = 128.f;
+  private static final String INPUT_NAME = "input_1"; //"input";
+  private static final String OUTPUT_NAME = "activation_16/Sigmoid"; // "output";
 
-  private static final String MODEL_FILE = "file:///android_asset/tensorflow_inception_graph.pb";
+
+  private static final String ENET_MODAL_FILE = "file:///android_asset/32x32_graph.pb";
+
+  private static final String MNIST_MODEL_FILE = "file:///android_asset/tensorflow_inception_graph.pb";
   private static final String LABEL_FILE =
-      "file:///android_asset/imagenet_comp_graph_label_strings.txt";
+      "file:///android_asset/labels_strings.txt";
 
   private static final boolean SAVE_PREVIEW_BITMAP = false;
 
-  private static final boolean MAINTAIN_ASPECT = true;
+  private static final boolean MAINTAIN_ASPECT = false;
 
   private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
 
@@ -121,7 +124,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
     classifier =
         TensorFlowImageClassifier.create(
             getAssets(),
-            MODEL_FILE,
+                ENET_MODAL_FILE,
             LABEL_FILE,
             INPUT_SIZE,
             IMAGE_MEAN,

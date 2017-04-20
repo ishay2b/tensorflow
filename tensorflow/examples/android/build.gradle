@@ -42,7 +42,7 @@ if (buildWithMake) {
 def makeNdkRoot = System.getenv('NDK_ROOT')
 
 // If building with Bazel, this is the location of the bazel binary.
-// NOTE: Bazel does not yet support building for Android on Windows,
+// NOTE: Bazel does not yet supploort building for Android on Windows,
 // so in this case the Makefile build must be used as described above.
 def bazelLocation = '/usr/local/bin/bazel'
 
@@ -59,7 +59,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.0'
+        classpath 'com.android.tools.build:gradle:2.3.3'
     }
 }
 
@@ -140,12 +140,12 @@ task copyNativeLibs(type: Copy) {
 
 
 tasks.whenTaskAdded { task ->
-    if (task.name == 'assembleDebug') {
+   /* if (task.name == 'assembleDebug') {
         task.dependsOn 'copyNativeLibs'
     }
     if (task.name == 'assembleRelease') {
         task.dependsOn 'copyNativeLibs'
-    }
+    }*/
 }
 
 // Download default models; if you wish to use your own models then
