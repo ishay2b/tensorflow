@@ -32,7 +32,11 @@ import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 /** A classifier specialized to label images using TensorFlow. */
 public class TensorFlowImageClassifier implements Classifier {
-  private static final String TAG = "TensorFlowImageClassifier";
+  static {
+    System.loadLibrary("tensorflow_demo");
+  }
+
+  private static final String TAG = "TFImageClassifier";
 
   // Only return this many results with at least this confidence.
   private static final int MAX_RESULTS = 3;
@@ -104,7 +108,7 @@ public class TensorFlowImageClassifier implements Classifier {
 
     // The shape of the output is [N, NUM_CLASSES], where N is the batch size.
     final Operation operation = c.inferenceInterface.graphOperation(outputName);
-    final int numClasses = (int) operation.output(0).shape().size(1);
+    final int numClasses = 120; //(int) operation.output(0).shape().size(1);
     Log.i(TAG, "Read " + c.labels.size() + " labels, output layer size is " + numClasses);
 
     // Ideally, inputSize could have been retrieved from the shape of the input operation.  Alas,
@@ -118,7 +122,8 @@ public class TensorFlowImageClassifier implements Classifier {
     c.outputNames = new String[] {outputName};
     c.intValues = new int[inputSize * inputSize];
     c.floatValues = new float[inputSize * inputSize * 3];
-    c.outputs = new float[numClasses];
+    final int enet_size = 64*64*3;
+    c.outputs = new float[enet_size/*numClasses*/];
 
     return c;
   }
@@ -131,18 +136,26 @@ public class TensorFlowImageClassifier implements Classifier {
     Trace.beginSection("preprocessBitmap");
     // Preprocess the image data from 0-255 int to normalized float based
     // on the provided parameters.
-    bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+      int bmW = bitmap.getWidth();
+      int bmH = bitmap.getHeight();
+
+    bitmap.getPixels(intValues, 0, bmW , 0, 0, bmW, bmH);
+    final float inv_imageStd = 1.0f/imageStd;
+    //From ARGB to RGB floats interleved -1..+1
     for (int i = 0; i < intValues.length; ++i) {
       final int val = intValues[i];
-      floatValues[i * 3 + 0] = (((val >> 16) & 0xFF) - imageMean) / imageStd;
-      floatValues[i * 3 + 1] = (((val >> 8) & 0xFF) - imageMean) / imageStd;
-      floatValues[i * 3 + 2] = ((val & 0xFF) - imageMean) / imageStd;
+      floatValues[i * 3 + 0] = (((val >> 16) & 0xFF) - imageMean) * inv_imageStd;
+      floatValues[i * 3 + 1] = (((val >> 8) & 0xFF) - imageMean) * inv_imageStd;
+      floatValues[i * 3 + 2] = ((val & 0xFF) - imageMean) * inv_imageStd ;
     }
     Trace.endSection();
 
     // Copy the input data into TensorFlow.
+    float []keep_prob ={1.f};
+
     Trace.beginSection("feed");
-    inferenceInterface.feed(inputName, floatValues, 1, inputSize, inputSize, 3);
+//      inferenceInterface.feed("keep_prob", keep_prob, 1);
+    inferenceInterface.feed(inputName, floatValues, 1, 3, inputSize, inputSize);
     Trace.endSection();
 
     // Run the inference call.

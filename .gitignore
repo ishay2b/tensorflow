@@ -13,3 +13,13 @@ node_modules
 __pycache__
 *.swp
 .vscode/
+.idea/
+simple-examples
+tensorflow/examples/android/.gradle
+tensorflow/examples/android/gradleBuild
+tensorflow/examples/android/libs
+local.properties
+android.iml
+*.hprof
+tensorflow/examples/OrigAssets
+*.properties

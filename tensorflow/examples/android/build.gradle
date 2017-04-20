@@ -28,7 +28,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.0'
+        classpath 'com.android.tools.build:gradle:2.3.3'
         classpath 'org.apache.httpcomponents:httpclient:4.5.2'
     }
 }
@@ -105,16 +105,16 @@ android {
     sourceSets {
         main {
             if (nativeBuildSystem == 'bazel' || nativeBuildSystem == 'makefile') {
-                // TensorFlow Java API sources.
-                java {
-                    srcDir '../../java/src/main/java'
-                    exclude '**/examples/**'
-                }
+            // TensorFlow Java API sources.
+            java {
+                srcDir '../../java/src/main/java'
+                exclude '**/examples/**'
+            }
 
-                // Android TensorFlow wrappers, etc.
-                java {
-                    srcDir '../../contrib/android/java'
-                }
+            // Android TensorFlow wrappers, etc.
+            java {
+                srcDir '../../contrib/android/java'
+            }
             }
             // Android demo app sources.
             java {
@@ -171,11 +171,11 @@ task copyNativeLibs(type: Copy) {
 tasks.whenTaskAdded { task ->
     if (nativeBuildSystem == 'bazel' || nativeBuildSystem == 'makefile') {
         if (task.name == 'assembleDebug') {
-            task.dependsOn 'copyNativeLibs'
-        }
-        if (task.name == 'assembleRelease') {
-            task.dependsOn 'copyNativeLibs'
-        }
+        task.dependsOn 'copyNativeLibs'
+    }
+    if (task.name == 'assembleRelease') {
+        task.dependsOn 'copyNativeLibs'
+    }
     }
 }
 

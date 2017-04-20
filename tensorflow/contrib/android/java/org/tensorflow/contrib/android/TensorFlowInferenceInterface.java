@@ -45,7 +45,7 @@ import org.tensorflow.TensorFlow;
  * example usage.
  */
 public class TensorFlowInferenceInterface {
-  private static final String TAG = "TensorFlowInferenceInterface";
+  private static final String TAG = "TensorFlowInference";
   private static final String ASSET_FILE_PREFIX = "file:///android_asset/";
 
   /*
