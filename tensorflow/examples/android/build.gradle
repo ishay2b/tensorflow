@@ -144,7 +144,7 @@ task buildNativeBazel(type: Exec) {
          '--host_crosstool_top=@bazel_tools//tools/cpp:toolchain'
 }
 
-task buildNativeMake(type: Exec) {
+task buildNativeMake(type: Exec) {/*
     environment "NDK_ROOT", android.ndkDirectory
     // Tip: install ccache and uncomment the following to speed up
     // builds significantly.
@@ -156,7 +156,7 @@ task buildNativeMake(type: Exec) {
          '-t',  \
          'libtensorflow_inference.so libtensorflow_demo.so'  \
          //, '-T'  // Uncomment to skip protobuf and speed up subsequent builds.
-}
+*/}
 
 
 task copyNativeLibs(type: Copy) {
@@ -169,6 +169,7 @@ task copyNativeLibs(type: Copy) {
 }
 
 tasks.whenTaskAdded { task ->
+/*
     if (nativeBuildSystem == 'bazel' || nativeBuildSystem == 'makefile') {
         if (task.name == 'assembleDebug') {
         task.dependsOn 'copyNativeLibs'
@@ -177,6 +178,7 @@ tasks.whenTaskAdded { task ->
         task.dependsOn 'copyNativeLibs'
     }
     }
+    */
 }
 
 // Download default models; if you wish to use your own models then

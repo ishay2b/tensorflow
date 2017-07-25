@@ -56,12 +56,12 @@ task extractModels(type: Copy) {
     }
 }
 
-tasks.whenTaskAdded { task ->
-/*    if (task.name == 'assembleDebug') {
+tasks.whenTaskAdded { task ->/*
+    if (task.name == 'assembleDebug') {
         task.dependsOn 'extractModels'
     }
     if (task.name == 'assembleRelease') {
         task.dependsOn 'extractModels'
-    }
-*/}
+    }*/
+}
 

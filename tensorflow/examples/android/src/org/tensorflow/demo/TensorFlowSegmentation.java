@@ -31,12 +31,12 @@ import org.tensorflow.Operation;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 /** A classifier specialized to label images using TensorFlow. */
-public class TensorFlowImageClassifier implements Classifier {
+public class TensorFlowSegmentation implements Classifier {
   static {
     System.loadLibrary("tensorflow_demo");
   }
 
-  private static final String TAG = "TFImageClassifier";
+  private static final String TAG = "TFSeg";
 
   // Only return this many results with at least this confidence.
   private static final int MAX_RESULTS = 3;
@@ -49,25 +49,24 @@ public class TensorFlowImageClassifier implements Classifier {
   private int imageMean;
   private float imageStd;
 
-  // Pre-allocated buffers.
+  // Pre-allocated buffers. §
   private Vector<String> labels = new Vector<String>();
   private int[] intValues;
   private float[] floatValues;
-  private float[] outputs;
+  public float[] outputs;
   private String[] outputNames;
 
   private boolean logStats = false;
 
   private TensorFlowInferenceInterface inferenceInterface;
 
-  private TensorFlowImageClassifier() {}
+  private TensorFlowSegmentation() {}
 
   /**
    * Initializes a native TensorFlow session for classifying images.
    *
    * @param assetManager The asset manager to be used to load assets.
    * @param modelFilename The filepath of the model GraphDef protocol buffer.
-   * @param labelFilename The filepath of label file for classes.
    * @param inputSize The input size. A square image of inputSize x inputSize is assumed.
    * @param imageMean The assumed mean of the image values.
    * @param imageStd The assumed std of the image values.
@@ -75,34 +74,17 @@ public class TensorFlowImageClassifier implements Classifier {
    * @param outputName The label of the output node.
    * @throws IOException
    */
-  public static Classifier create(
+  public static TensorFlowSegmentation create(
       AssetManager assetManager,
       String modelFilename,
-      String labelFilename,
       int inputSize,
       int imageMean,
       float imageStd,
       String inputName,
       String outputName) {
-    TensorFlowImageClassifier c = new TensorFlowImageClassifier();
+    TensorFlowSegmentation c = new TensorFlowSegmentation();
     c.inputName = inputName;
     c.outputName = outputName;
-
-    // Read the label names into memory.
-    // TODO(andrewharp): make this handle non-assets.
-    String actualFilename = labelFilename.split("file:///android_asset/")[1];
-    Log.i(TAG, "Reading labels from: " + actualFilename);
-    BufferedReader br = null;
-    try {
-      br = new BufferedReader(new InputStreamReader(assetManager.open(actualFilename)));
-      String line;
-      while ((line = br.readLine()) != null) {
-        c.labels.add(line);
-      }
-      br.close();
-    } catch (IOException e) {
-      throw new RuntimeException("Problem reading label file!" , e);
-    }
 
     c.inferenceInterface = new TensorFlowInferenceInterface(assetManager, modelFilename);
 
@@ -122,8 +104,7 @@ public class TensorFlowImageClassifier implements Classifier {
     c.outputNames = new String[] {outputName};
     c.intValues = new int[inputSize * inputSize];
     c.floatValues = new float[inputSize * inputSize * 3];
-    final int enet_size = 64*64*3;
-    c.outputs = new float[enet_size/*numClasses*/];
+    c.outputs = new float[inputSize *inputSize * 3];
 
     return c;
   }
@@ -142,11 +123,28 @@ public class TensorFlowImageClassifier implements Classifier {
     bitmap.getPixels(intValues, 0, bmW , 0, 0, bmW, bmH);
     final float inv_imageStd = 1.0f/imageStd;
     //From ARGB to RGB floats interleved -1..+1
-    for (int i = 0; i < intValues.length; ++i) {
-      final int val = intValues[i];
-      floatValues[i * 3 + 0] = (((val >> 16) & 0xFF) - imageMean) * inv_imageStd;
-      floatValues[i * 3 + 1] = (((val >> 8) & 0xFF) - imageMean) * inv_imageStd;
-      floatValues[i * 3 + 2] = ((val & 0xFF) - imageMean) * inv_imageStd ;
+
+    final boolean INTERLEVED = true;
+    if (INTERLEVED) {
+      final int R = 0;
+      final int G = inputSize*inputSize;
+      final int B = inputSize*inputSize*2;
+
+      for (int i = 0; i < intValues.length; ++i) {
+        final int val = intValues[i];
+        floatValues[R+i] = (((val >> 16) & 0xFF) - imageMean) * inv_imageStd;
+        floatValues[G+i] = (((val >> 8) & 0xFF) - imageMean) * inv_imageStd;
+        floatValues[B+i] = ((val & 0xFF) - imageMean) * inv_imageStd;
+      }
+
+    } else {
+
+      for (int i = 0; i < intValues.length; ++i) {
+        final int val = intValues[i];
+        floatValues[i * 3 + 0] = (((val >> 16) & 0xFF) - imageMean) * inv_imageStd;
+        floatValues[i * 3 + 1] = (((val >> 8) & 0xFF) - imageMean) * inv_imageStd;
+        floatValues[i * 3 + 2] = ((val & 0xFF) - imageMean) * inv_imageStd;
+      }
     }
     Trace.endSection();
 
@@ -154,7 +152,7 @@ public class TensorFlowImageClassifier implements Classifier {
     float []keep_prob ={1.f};
 
     Trace.beginSection("feed");
-//      inferenceInterface.feed("keep_prob", keep_prob, 1);
+    //inferenceInterface.feed("keep_prob", keep_prob, 1);
     inferenceInterface.feed(inputName, floatValues, 1, 3, inputSize, inputSize);
     Trace.endSection();
 
@@ -168,31 +166,8 @@ public class TensorFlowImageClassifier implements Classifier {
     inferenceInterface.fetch(outputName, outputs);
     Trace.endSection();
 
-    // Find the best classifications.
-    PriorityQueue<Recognition> pq =
-        new PriorityQueue<Recognition>(
-            3,
-            new Comparator<Recognition>() {
-              @Override
-              public int compare(Recognition lhs, Recognition rhs) {
-                // Intentionally reversed to put high confidence at the head of the queue.
-                return Float.compare(rhs.getConfidence(), lhs.getConfidence());
-              }
-            });
-    for (int i = 0; i < outputs.length; ++i) {
-      if (outputs[i] > THRESHOLD) {
-        pq.add(
-            new Recognition(
-                "" + i, labels.size() > i ? labels.get(i) : "unknown", outputs[i], null));
-      }
-    }
-    final ArrayList<Recognition> recognitions = new ArrayList<Recognition>();
-    int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
-    for (int i = 0; i < recognitionsSize; ++i) {
-      recognitions.add(pq.poll());
-    }
     Trace.endSection(); // "recognizeImage"
-    return recognitions;
+    return null; // Results sits in public member called outputs,
   }
 
   @Override
