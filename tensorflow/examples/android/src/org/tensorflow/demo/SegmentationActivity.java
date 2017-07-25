@@ -42,8 +42,9 @@ import org.tensorflow.demo.OverlayView.DrawCallback;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
-import org.tensorflow.demo.tracking.MultiBoxTracker;
 import org.tensorflow.demo.R;
+import org.tensorflow.demo.tracking.SegTracker;
+
 
 /**
  * An activity that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
@@ -99,6 +100,10 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
 
   private long lastProcessingTimeMs;
 
+    final Paint paint= new Paint();
+
+    SegTracker tracker;
+
   @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
     final float textSizePx =
@@ -107,7 +112,11 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
     borderedText = new BorderedText(textSizePx);
     borderedText.setTypeface(Typeface.MONOSPACE);
 
-    detector =
+      paint.setColor(Color.RED);
+      paint.setStyle(Style.STROKE);
+      paint.setStrokeWidth(2.0f);
+
+      detector =
             TensorFlowSegmentation.create(
               getAssets(),
               MB_MODEL_FILE,
@@ -140,11 +149,41 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
 
     cropToFrameTransform = new Matrix();
     frameToCropTransform.invert(cropToFrameTransform);
+
     yuvBytes = new byte[3][];
 
-    trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
+      tracker = new SegTracker(this, detector.outputs);
 
-    addCallback(
+      trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
+      trackingOverlay.addCallback(
+              new DrawCallback() {
+                  @Override
+                  public void drawCallback(final Canvas canvas) {
+                      tracker.draw(canvas);
+                      if (isDebug()) {
+                          tracker.drawDebug(canvas);
+                   }
+  /*
+                      int z=0;
+                      for (int i=0; i<MB_INPUT_SIZE; ++i){
+                          for (int j=0; j<MB_INPUT_SIZE; ++j){
+                              if (detector.outputs[z]>0.2){
+                                  float xy[]=new float[]{(float)i, (float)j};
+                                  cropToFrameTransform.mapPoints(xy);
+                                  canvas.drawPoint(xy[0], xy[1] , paint);
+
+                              }
+
+                              z += 1;
+                          }
+                      }
+*/
+                  }
+              });
+
+
+
+      addCallback(
         new DrawCallback() {
           @Override
           public void drawCallback(final Canvas canvas) {
@@ -209,6 +248,14 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
       final Plane[] planes = image.getPlanes();
       fillBytes(planes, yuvBytes);
 
+        tracker.onFrame(
+                previewWidth,
+                previewHeight,
+                planes[0].getRowStride(),
+                sensorOrientation,
+                yuvBytes[0],
+                timestamp);
+
       trackingOverlay.postInvalidate();
 
       // No mutex needed as this method is not reentrant.
@@ -261,26 +308,27 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
           @Override
           public void run() {
             final long startTime = SystemClock.uptimeMillis();
-            final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
-            lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+            //final List<Classifier.Recognition> results =
+              detector.recognizeImage(croppedBitmap);
+              lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
             cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
             final Canvas canvas = new Canvas(cropCopyBitmap);
-            final Paint paint = new Paint();
-            paint.setColor(Color.RED);
-            paint.setStyle(Style.STROKE);
-            paint.setStrokeWidth(2.0f);
 
               int z=0;
               for (int i=0; i<MB_INPUT_SIZE; ++i){
                   for (int j=0; j<MB_INPUT_SIZE; ++j){
                       if (detector.outputs[z]>0.2){
                           canvas.drawPoint(i, j , paint);
+                          //float xy[]=new float[]{(float)i, (float)j};
+                          //cropToFrameTransform.mapPoints(xy);
+
                       }
 
                       z += 1;
                   }
               }
+
 
 /*
             for (final Classifier.Recognition result : results) {
@@ -320,4 +368,9 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
   public void onSetDebug(final boolean debug) {
     detector.enableStatLogging(debug);
   }
+
+    @Override
+    protected void processImageRGBbytes(int[] rgbBytes) {
+        LOGGER.d("RGB");
+    }
 }
