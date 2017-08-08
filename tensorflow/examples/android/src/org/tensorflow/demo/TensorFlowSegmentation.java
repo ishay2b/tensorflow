@@ -52,7 +52,7 @@ public class TensorFlowSegmentation implements Classifier {
   // Pre-allocated buffers. §
   private Vector<String> labels = new Vector<String>();
   private int[] intValues;
-  private float[] floatValues;
+  public float[] floatValues;
   public float[] outputs;
   private String[] outputNames;
 
@@ -104,7 +104,7 @@ public class TensorFlowSegmentation implements Classifier {
     c.outputNames = new String[] {outputName};
     c.intValues = new int[inputSize * inputSize];
     c.floatValues = new float[inputSize * inputSize * 3];
-    c.outputs = new float[inputSize *inputSize * 3];
+    c.outputs = new float[inputSize *inputSize];
 
     return c;
   }
@@ -124,11 +124,13 @@ public class TensorFlowSegmentation implements Classifier {
     final float inv_imageStd = 1.0f/imageStd;
     //From ARGB to RGB floats interleved -1..+1
 
-    final boolean INTERLEVED = true;
-    if (INTERLEVED) {
-      final int R = 0;
-      final int G = inputSize*inputSize;
-      final int B = inputSize*inputSize*2;
+    final boolean INTERLEVED = false; // false because Segnetinput is (3,input_size,input_size) rather than interleaved (input_size,input_size,3)
+    final boolean NO_FEED = true; //For Debug set this to true and the network will be fed with zeros and the the image.
+
+    if (!INTERLEVED && !NO_FEED) {//Seperate to 3 matrix of All R, All G, All B
+      final int R = 0; // This is the loop that should run
+      final int G = inputSize*inputSize; // G first index
+      final int B = inputSize*inputSize*2; // B first index
 
       for (int i = 0; i < intValues.length; ++i) {
         final int val = intValues[i];
@@ -137,8 +139,7 @@ public class TensorFlowSegmentation implements Classifier {
         floatValues[B+i] = ((val & 0xFF) - imageMean) * inv_imageStd;
       }
 
-    } else {
-
+    } else if (!NO_FEED) {
       for (int i = 0; i < intValues.length; ++i) {
         final int val = intValues[i];
         floatValues[i * 3 + 0] = (((val >> 16) & 0xFF) - imageMean) * inv_imageStd;

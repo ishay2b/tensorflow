@@ -55,8 +55,8 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
 
   // Configuration values for the prepackaged multibox model.
   private static final int MB_INPUT_SIZE = 128;
-  private static final int MB_IMAGE_MEAN = 128;
-  private static final float MB_IMAGE_STD = 128;
+  private static final int MB_IMAGE_MEAN = 128; //Scale from 0..255 to -128..127
+  private static final float MB_IMAGE_STD = 128.f;//Scale from -128..127 to -1..+1
   private static final String MB_INPUT_NAME = "input_1";
   private static final String MB_OUTPUT_LOCATIONS_NAME = "activation_16/Sigmoid";
   private static final String MB_MODEL_FILE = "file:///android_asset/hand_model_weights_resnet_binary_128.pb";
@@ -293,10 +293,6 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
     final Canvas canvas = new Canvas(croppedBitmap);
     canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
 
-    // For examining the actual TF input.
-    if (SAVE_PREVIEW_BITMAP) {
-      ImageUtils.saveBitmap(croppedBitmap);
-    }
 
     if (luminance == null) {
       luminance = new byte[yuvBytes[0].length];
@@ -312,7 +308,16 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
               detector.recognizeImage(croppedBitmap);
               lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
-            cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+              // For examining the actual TF input.
+              if (SAVE_PREVIEW_BITMAP) {
+                  ImageUtils.saveBitmap(croppedBitmap);
+                  PyDump.dumpFloatsArray("net_outs.json", detector.outputs);
+                  PyDump.dumpFloatsArray("net_ins.json", detector.floatValues);
+
+              }
+
+
+              cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
             final Canvas canvas = new Canvas(cropCopyBitmap);
 
               int z=0;
@@ -366,7 +371,9 @@ public class SegmentationActivity extends CameraActivity implements OnImageAvail
 
   @Override
   public void onSetDebug(final boolean debug) {
-    detector.enableStatLogging(debug);
+    if (null != detector) {
+      detector.enableStatLogging(debug);
+    }
   }
 
     @Override
