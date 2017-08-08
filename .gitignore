@@ -17,9 +17,10 @@ __pycache__
 simple-examples
 tensorflow/examples/android/.gradle
 tensorflow/examples/android/gradleBuild
-tensorflow/examples/android/libs
 local.properties
 android.iml
 *.hprof
 tensorflow/examples/OrigAssets
 *.properties
+tensorflow/examples/android/libs/x86
+tensorflow/examples/android/libs/x86_64

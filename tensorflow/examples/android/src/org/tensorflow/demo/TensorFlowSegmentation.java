@@ -125,7 +125,7 @@ public class TensorFlowSegmentation implements Classifier {
     //From ARGB to RGB floats interleved -1..+1
 
     final boolean INTERLEVED = false; // false because Segnetinput is (3,input_size,input_size) rather than interleaved (input_size,input_size,3)
-    final boolean NO_FEED = true; //For Debug set this to true and the network will be fed with zeros and the the image.
+    final boolean NO_FEED = false; //For Debug set this to true and the network will be fed with zeros and the the image.
 
     if (!INTERLEVED && !NO_FEED) {//Seperate to 3 matrix of All R, All G, All B
       final int R = 0; // This is the loop that should run
