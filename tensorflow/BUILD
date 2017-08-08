@@ -64,6 +64,24 @@ config_setting(
 )
 
 config_setting(
+    name = "android_mips",
+    values = {
+        "crosstool_top": "//external:android/crosstool",
+        "cpu": "mips",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "android_mips64",
+    values = {
+        "crosstool_top": "//external:android/crosstool",
+        "cpu": "mips64",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
     name = "darwin",
     values = {"cpu": "darwin"},
     visibility = ["//visibility:public"],
@@ -288,6 +306,7 @@ filegroup(
         "//tensorflow/contrib/linear_optimizer:all_files",
         "//tensorflow/contrib/lookup:all_files",
         "//tensorflow/contrib/losses:all_files",
+        "//tensorflow/contrib/meta_graph_transform:all_files",
         "//tensorflow/contrib/metrics:all_files",
         "//tensorflow/contrib/ndlstm:all_files",
         "//tensorflow/contrib/nn:all_files",
@@ -353,6 +372,7 @@ filegroup(
         "//tensorflow/core/util/tensor_bundle:all_files",
         "//tensorflow/examples/android:all_files",
         "//tensorflow/examples/benchmark:all_files",
+        "//tensorflow/examples/get_started/regression:all_files",
         "//tensorflow/examples/how_tos/reading_data:all_files",
         "//tensorflow/examples/image_retraining:all_files",
         "//tensorflow/examples/label_image:all_files",

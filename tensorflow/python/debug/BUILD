@@ -10,10 +10,6 @@
 
 package(
     default_visibility = ["//tensorflow:internal"],
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
 )
 
 licenses(["notice"])  # Apache 2.0
@@ -160,6 +156,16 @@ py_library(
 )
 
 py_library(
+    name = "evaluator",
+    srcs = ["cli/evaluator.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":debug_data",
+        "//third_party/py/numpy",
+    ],
+)
+
+py_library(
     name = "analyzer_cli",
     srcs = ["cli/analyzer_cli.py"],
     srcs_version = "PY2AND3",
@@ -168,6 +174,7 @@ py_library(
         ":command_parser",
         ":debug_data",
         ":debugger_cli_common",
+        ":evaluator",
         ":source_utils",
         ":ui_factory",
         "@six_archive//:six",
@@ -708,6 +715,22 @@ py_test(
     ],
 )
 
+py_test(
+    name = "evaluator_test",
+    size = "small",
+    srcs = [
+        "cli/evaluator_test.py",
+    ],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":debug_data",
+        ":evaluator",
+        "//tensorflow/python:client_testlib",
+        "//tensorflow/python:framework_test_lib",
+        "//third_party/py/numpy",
+    ],
+)
+
 cuda_py_test(
     name = "analyzer_cli_test",
     size = "small",
@@ -798,6 +821,7 @@ cuda_py_test(
         "//tensorflow/python:variables",
     ],
     tags = [
+        "no_windows",
         "nomac",  # TODO(cais): Install of futures and grpcio on all macs.
         "notsan",
         "oss_serial",
@@ -826,6 +850,7 @@ cuda_py_test(
     data = ["//tensorflow/tools/dist_test/server:grpc_tensorflow_server"],
     tags = [
         "no_oss",  # Incompatible with bazel_pip.
+        "no_windows",
         "nomac",  # TODO(cais): Install of futures and grpcio on all macs.
         "notsan",
     ],
